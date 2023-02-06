@@ -108,7 +108,7 @@ try{
                                     }
                                     // var_dump($query_6, $field);
 
-                                    $query_6 .= "`{$field}` = ".((empty($column_value))?"NULL":"'{$column_value}'");
+                                    $query_6 .= "`{$field}` = ".((is_null($column_value))?"NULL":"'{$column_value}'");
                                     $column_data_[] = $column_value;
                                 }
                                 echo $query_6."; ".PHP_EOL;
@@ -164,7 +164,7 @@ try{
 
                     $data_in_table = returnAllData($db_ref, $query_3, [$concept_record['concept_id']]);
 
-                    print_r($data_in_table);
+                    // print_r($data_in_table);
                     if($data_in_table){
 
                         // print_r($data_in_table);
@@ -184,6 +184,7 @@ try{
                                 $key_value = null;
                                 $uuid = null;
                                 // print_r($single_row_data);
+                                $ignore = false;
                                 foreach($single_row_data AS $field=>$column_value){
                                     if($field == $primary_key){
                                         $key_value = $column_value;
@@ -192,8 +193,15 @@ try{
 
                                     
                                     if($field == 'uuid'){
+                                        //check if the uuid had somedata 
+                                        $uuid_data = returnSingleField($db_corunum, $info_query = "SELECT * FROM `{$db_corunum->db_name}`.`{$table_info['foreign_table']}` WHERE uuid = ?", 'uuid', [$column_value]);
                                         // $query_6 .= ", uuid='EMPTY'";
-                                        $key_value = $column_value;
+                                        echo $uuid_data." ==> ".$info_query." ".$column_value.PHP_EOL;
+                                        if($uuid_data){
+                                            $ignore = true;
+                                            break;
+                                        }
+                                        $uuid = $column_value;
                                         // continue;
                                     }
                                     if(count($column_data_) > 0){
@@ -203,14 +211,57 @@ try{
                                     if($field == $table_info['COLUMN_NAME']){
                                         $column_value = $concept_id_new;
                                     }
-                                    $query_6 .= "`{$field}` = ".((empty($column_value))?"NULL":"'{$column_value}'");
+                                    $query_6 .= "`{$field}` = ".((is_null($column_value))?"NULL":"'{$column_value}'");
                                     $column_data_[] = $column_value;
                                 }
-                                echo $query_6."; ".PHP_EOL;
-                                execute_statement($db_corunum, $query_6);
+                                if(!$ignore) {
+                                    echo $query_6."; ".PHP_EOL;
+                                    execute_statement($db_corunum, $query_6);
+                                }
                                 // saveData($db_corunum, "UPDATE `{$db_corunum->db_name}`.`{$table_info['foreign_table']}` SET `$primary_key`=?, uuid=? WHERE $primary_key = ?", [$key_value, $uuid, $db_corunum->lastInsertId()]);
                             } else {
                                 //Here now make to build the query
+
+                                $query_6 = "INSERT INTO `{$db_corunum->db_name}`.`{$table_info['foreign_table']}` SET ";
+                                $column_data_ = [];
+                                $key_value = null;
+                                $uuid = null;
+                                $ignore = false;
+                                // print_r($single_row_data);
+                                foreach($single_row_data AS $field=>$column_value){
+                                    if($field == $primary_key){
+                                        $key_value = $column_value;
+                                        continue;
+                                    }
+
+                                    
+                                    if($field == 'uuid'){
+                                        // $query_6 .= ", uuid='EMPTY'";
+                                        $uuid_data = returnSingleField($db_corunum, $info_query = "SELECT * FROM `{$db_corunum->db_name}`.`{$table_info['foreign_table']}` WHERE uuid = '{$column_value}'", 'uuid');
+                                        // $query_6 .= ", uuid='EMPTY'";
+                                        echo $uuid_data." ||==> ".$info_query." ".$column_value.PHP_EOL;
+                                        if($uuid_data){
+                                            $ignore = true;
+                                            break;
+                                        }
+                                        $uuid = $column_value;
+                                        // continue;
+                                    }
+                                    if(count($column_data_) > 0){
+                                        $query_6 .= ", ";
+                                    }
+                                    // var_dump($query_6, $field);
+                                    if($field == $table_info['COLUMN_NAME']){
+                                        echo "OLD DB: ".$column_value.PHP_EOL;
+                                        $column_value = $concept_id_new;
+                                    }
+                                    $query_6 .= "`{$field}` = ".((is_null($column_value))?"NULL":"'{$column_value}'");
+                                    $column_data_[] = $column_value;
+                                }
+                                if(!$ignore) {
+                                    echo $query_6."; ;;;;;;;;;;;;;;;;;;;;;;;;".PHP_EOL;
+                                    execute_statement($db_corunum, $query_6);
+                                }
                             }
                         }
                     }
