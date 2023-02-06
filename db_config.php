@@ -180,7 +180,7 @@ if(!function_exists("execute_statement")){
 			$statement = $pdo->query($query);
 			$statement->execute();
 		} catch(\Exception $e){
-			throw new Exception(sprintf("unable to execute the requested task %s", $e->getMessage()));
+			throw new Exception(sprintf("unable to execute the requested task %s the query was %s", $e->getMessage(), $query));
 		}
 	}
 }
@@ -197,6 +197,10 @@ if(!function_exists("RoundDown")){
 		return $value - ($value%$check);
 	}
 }
+
+
+$db = new MyPDO("my_setting.ini");
+$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 
 $db_ref = new MyPDO("my_setting_refe.ini");
